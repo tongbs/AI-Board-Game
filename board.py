@@ -8,6 +8,20 @@ print(Style.DIM + 'and in dim text')
 print(Style.RESET_ALL) 
 print('back to normal now') 
 '''
+def transfer_to_index(twodarray,board_size):
+    index = []
+    for i in range(len(twodarray)):
+        tmp = twodarray[i][0]*board_size+twodarray[i][1]
+        index.append(tmp)
+    return index
+
+def print_init_board(board, board_size):
+    for i in range(board_size):
+        for j in range(board_size):
+            print(str(board[i][j])+'  ',end="")
+            if (i*board_size+j+1)%board_size == 0:
+                print('\n',end="")
+
 def check_chess(hands, chess):   # 檢查要出的牌是否在自已手上
     if chess in hands:
         return "yes"
@@ -15,7 +29,6 @@ def check_chess(hands, chess):   # 檢查要出的牌是否在自已手上
         return "no"
 
 def print_board(board, board_size, user_on_board, ai_on_board):     # 劃出目前局勢
-    print(board)
     index_user_on_board, index_ai_on_board = [], []
     for i in range(len(user_on_board)):
         tmp = user_on_board[i][0]*board_size+user_on_board[i][1]
@@ -161,7 +174,35 @@ def score_on_board(board,board_size, user_on_board,ai_on_board):
                     ai_score+=board[i][j]
     return ai_score
 
-def cal_final_score(board, ai_on_board, user_on_board):
+def cal_final_score(board, board_size, user_on_board, ai_on_board):
+    index_user_on_board = transfer_to_index(user_on_board, board_size)
+    index_ai_on_board = transfer_to_index(ai_on_board, board_size)
+    user_final_score, ai_final_score = [], []
+    user_max_chess, ai_max_chess = 0, 0
+    for i in range(board_size):
+        for j in range(board_size):
+            if i*board_size+j in index_user_on_board and board[i][j] != -1:
+                user_final_score.append(board[i][j])
+            if i*board_size+j in index_ai_on_board and board[i][j] != -1:
+                ai_final_score.append(board[i][j])
+    user_max_chess = max(user_final_score)
+    ai_max_chess = max(ai_final_score)
+    return sum(user_final_score), user_max_chess, sum(ai_final_score), ai_max_chess
+
+def whoiswinner(user_final_score, user_max_chess, ai_final_score, ai_max_chess):
+    print("User final score: ", user_final_score)
+    print("AI final score: ", ai_final_score)
+    if user_final_score == ai_final_score:
+        if user_max_chess > ai_max_chess:
+            print("User Win!")
+        elif ai_max_chess > user_max_chess:
+            print("AI Win!")
+        else:
+            print("Draw!")
+    elif user_final_score > ai_final_score:
+        print("User Win!")
+    else:
+        print("AI Win!")
 
 if __name__ == "__main__":
     first = int(input("User First? (0/1):"))
@@ -173,7 +214,7 @@ if __name__ == "__main__":
         user_on_board = []
         ai_on_board = []
         board = np.zeros((4,4), dtype=int)
-        print(board)
+        print_init_board(board, board_size)
         print(Back.RED+'User chess pieces: ',end="")
         print(Style.RESET_ALL,end="")
         print(user)
@@ -192,10 +233,46 @@ if __name__ == "__main__":
                     break
                 else:              # ai first
                     print("AI first")
+                    for i in range(5):  # 4x4下5次end game
+                        board, ai, user, ai_on_board = ai_chess(board, ai, user, board_size, ai_on_board, user_on_board)
+                        board, user, ai, user_on_board = user_chess(board, user, ai, board_size, user_on_board, ai_on_board)
+                    break
         print("End Game")
         print_board(board, board_size, user_on_board, ai_on_board)
-
+        user_final_score, user_max_chess, ai_final_score, ai_max_chess = cal_final_score(board, board_size, user_on_board, ai_on_board)
+        whoiswinner(user_final_score, user_max_chess, ai_final_score, ai_max_chess) 
     elif board_size == 6:
+        user = [2,2,3,3,5,5,8,8,8,13,13]
+        ai = [2,2,3,3,5,5,8,8,8,13,13]
+        user_on_board = []
+        ai_on_board = []
         board = np.zeros((6,6), dtype=int)
+        print_init_board(board, board_size)
+        print(Back.RED+'User chess pieces: ',end="")
+        print(Style.RESET_ALL,end="")
+        print(user)
+        print(Back.BLUE+'AI chess pieces: ',end="")
+        print(Style.RESET_ALL,end="")
+        print(ai)
+        # 6x6 Game Start
+        while True:
+            if len(user) == 0 or len(ai) == 0:
+                break
+            else:
+                if first == 1:     # user first
+                    for i in range(11):  # 4x4下5次end game
+                        board, user, ai, user_on_board = user_chess(board, user, ai, board_size, user_on_board, ai_on_board)
+                        board, ai, user, ai_on_board = ai_chess(board, ai, user, board_size, ai_on_board, user_on_board)
+                    break
+                else:              # ai first
+                    print("AI first")
+                    for i in range(11):  # 4x4下5次end game
+                        board, ai, user, ai_on_board = ai_chess(board, ai, user, board_size, ai_on_board, user_on_board)
+                        board, user, ai, user_on_board = user_chess(board, user, ai, board_size, user_on_board, ai_on_board)
+                    break
+        print("End Game")
+        print_board(board, board_size, user_on_board, ai_on_board)
+        user_final_score, user_max_chess, ai_final_score, ai_max_chess = cal_final_score(board, board_size, user_on_board, ai_on_board)
+        whoiswinner(user_final_score, user_max_chess, ai_final_score, ai_max_chess)
     else:
         print("Your enter wrong board size!")

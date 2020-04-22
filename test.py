@@ -35,9 +35,10 @@ print(Style.RESET_ALL,end="")
 #print(Style.RESET_ALL) 
 #print('back to normal now') 
 
-a = [1,2,3,4,2,4]
+a = [1,2,3,4,20,4]
 
-
+print(max(a))
+print(sum(a))
 
 a.remove(1)
 
