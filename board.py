@@ -147,10 +147,8 @@ def position(board, ai, board_size, user_on_board, ai_on_board):
                         tmp_board[i][j] = ai[hand]
                         tmp_board = change_board_cond(tmp_board, i, j, ai[hand], board_size)
                         #print(tmp_board)
-                        user_score, ai_score = score_on_board(tmp_board, board_size, user_on_board, ai_on_board)
-                        #print("user_score: ",user_score)
-                        #print("ai_score: ", ai_score)
-                        pos_score.append([ai[hand], i, j, user_score, ai_score])
+                        prob_win_score = user_next_move(tmp_board, board_size, user, ai)                        
+                        pos_score.append([ai[hand], i, j, prob_win_score])
                         ai_on_board.remove([i,j])
                         tmp_board[i][j] = 0
         row, col, weight = find_best_choice(pos_score)
@@ -159,7 +157,32 @@ def position(board, ai, board_size, user_on_board, ai_on_board):
         max_chess_index = ai.index(max(ai))
         weight = ai[max_chess_index-1]
         return row, col, weight
-     
+
+def user_next_move(board, board_size, user, ai):
+    prob_score = []
+    for hand in range(len(user)):
+        for i in range(board_size):
+            for j in range(board_size):
+                tmp_board = board.copy()
+                if board[i][j] != -1 and board[i][j] == 0:
+                    user_on_board.append([i,j])
+                    tmp_board[i][j] = user[hand]
+                    tmp_board = change_board_cond(tmp_board, i, j, ai[hand], board_size)
+                    user_score, ai_score = score_on_board(tmp_board, board_size, user_on_board, ai_on_board)
+                    prob_score.append([user_score, ai_score])
+                    user_on_board.remove([i,j])
+                    tmp_board[i][j] = 0
+    prob_win_score = cal_prob_win_score(prob_score)
+    return prob_win_score                        
+
+def cal_prob_win_score(prob_score):
+    ai_win = 0
+    for i in range(len(prob_score)):
+        if prob_score[i][1] - prob_score[i][0] > 0:
+            ai_win+=1
+    return ai_win
+
+
 def score_on_board(board,board_size, user_on_board,ai_on_board):
     user_score = 0
     ai_score = 0
@@ -203,8 +226,8 @@ def check_corner(board, board_size):
 def find_best_choice(pos_score):
     choice = []
     for i in range(len(pos_score)):
-        ai_win_score = pos_score[i][4] - pos_score[i][3] # AI贏user幾分
-        choice.append(ai_win_score)
+        # 找出哪個位置贏的機會大
+        choice.append(pos_score[i][3])
     index = choice.index(max(choice))
     row = pos_score[index][1]
     col = pos_score[index][2]
