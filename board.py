@@ -62,7 +62,7 @@ def print_rest_chess(user, ai):    # 剩餘手牌
     print(Back.RED + 'User chess pieces: ',end="")
     print(Style.RESET_ALL,end="")
     print(user)
-    print(Back.BLUE+'AI chess pieces: ',end="")
+    print(Back.GREEN+'AI chess pieces: ',end="")
     print(Style.RESET_ALL,end="")
     print(ai)
 
@@ -135,44 +135,81 @@ def change_board_cond(board, row, col, weight, board_size):
     return board
 
 def position(board, ai, board_size, user_on_board, ai_on_board):
-    pos_score = []
-    pos = []
-    for hand in range(len(ai)):
-        tmp_board = board.copy()
-        for i in range(board_size):
-            for j in range(board_size):
-                if board[i][j] != -1 and board[i][j] == 0:
-                    ai_on_board.append([i,j])
-                    pos.append([i,j,ai[hand]])
-                    #print(f'{board}, {i}, {j}, {ai[hand]}, {board_size}')
-                    tmp_board[i][j] = ai[hand]
-                    tmp_board = change_board_cond(tmp_board, i, j, ai[hand], board_size)
-                    #print(tmp_board)
-                    tmp_score = score_on_board(tmp_board, board_size, user_on_board,ai_on_board)
-                    #print(tmp_score)
-                    ai_on_board.remove([i,j])
-                    tmp_board[i][j] = 0
-                    pos_score.append(tmp_score)
-
-    best_pos_index = pos_score.index(max(pos_score))
-    row = int(pos[best_pos_index][0])
-    col = int(pos[best_pos_index][1])
-    weight = int(pos[best_pos_index][2])
-    return row,col,weight
+    row, col = check_corner(board, board_size)
+    if row == -2 and col == -2:  #corner都被下完了
+        pos_score = []  #[[hand, row, col, user_score, ai_score],[]]
+        for hand in range(len(ai)):
+            for i in range(board_size):
+                for j in range(board_size):
+                    tmp_board = board.copy()
+                    if board[i][j] != -1 and board[i][j] == 0:
+                        ai_on_board.append([i,j])
+                        tmp_board[i][j] = ai[hand]
+                        tmp_board = change_board_cond(tmp_board, i, j, ai[hand], board_size)
+                        #print(tmp_board)
+                        user_score, ai_score = score_on_board(tmp_board, board_size, user_on_board, ai_on_board)
+                        #print("user_score: ",user_score)
+                        #print("ai_score: ", ai_score)
+                        pos_score.append([ai[hand], i, j, user_score, ai_score])
+                        ai_on_board.remove([i,j])
+                        tmp_board[i][j] = 0
+        row, col, weight = find_best_choice(pos_score)
+        return row, col, weight
+    else:  # 要先出小於13但最大的
+        max_chess_index = ai.index(max(ai))
+        weight = ai[max_chess_index-1]
+        return row, col, weight
      
 def score_on_board(board,board_size, user_on_board,ai_on_board):
+    user_score = 0
     ai_score = 0
-    index_ai_on_board = []
-    for i in range(len(ai_on_board)):
-        for j in range(len(ai_on_board)):
-            tmp = ai_on_board[i][0]*board_size+ai_on_board[i][1]
-            index_ai_on_board.append(tmp)
+    index_user_on_board = transfer_to_index(user_on_board, board_size)
+    index_ai_on_board = transfer_to_index(ai_on_board, board_size)
     for i in range(board_size):
         for j in range(board_size):
-            if i*board_size+j in index_ai_on_board:
+            index = i*board_size+j
+            if index in index_user_on_board:
+                if board[i][j] != -1:
+                    user_score+=board[i][j]
+            if index in index_ai_on_board:
                 if board[i][j] != -1:
                     ai_score+=board[i][j]
-    return ai_score
+    return user_score, ai_score
+
+def check_corner(board, board_size):
+    if board_size == 4:
+        if board[3][3] == 0:
+            return 3, 3
+        elif board[3][0] == 0:
+            return 3, 0
+        elif board[0][3] == 0:
+            return 0, 3
+        elif board[0][0] == 0:
+            return 0, 0
+        else:
+            return -2, -2
+    else:
+        if board[5][5] == 0:
+            return 5, 5
+        elif board[5][0] == 0:
+            return 5, 0
+        elif board[0][5] == 0:
+            return 0, 5
+        elif board[0][0] == 0:
+            return 0, 0
+        else:
+            return -2, -2
+
+def find_best_choice(pos_score):
+    choice = []
+    for i in range(len(pos_score)):
+        ai_win_score = pos_score[i][4] - pos_score[i][3] # AI贏user幾分
+        choice.append(ai_win_score)
+    index = choice.index(max(choice))
+    row = pos_score[index][1]
+    col = pos_score[index][2]
+    weight = pos_score[index][0]
+    return row, col, weight
 
 def cal_final_score(board, board_size, user_on_board, ai_on_board):
     index_user_on_board = transfer_to_index(user_on_board, board_size)
@@ -185,8 +222,14 @@ def cal_final_score(board, board_size, user_on_board, ai_on_board):
                 user_final_score.append(board[i][j])
             if i*board_size+j in index_ai_on_board and board[i][j] != -1:
                 ai_final_score.append(board[i][j])
-    user_max_chess = max(user_final_score)
-    ai_max_chess = max(ai_final_score)
+    if len(user_final_score) != 0:
+        user_max_chess = max(user_final_score)
+    else:
+        user_max_chess = 0
+    if len(ai_final_score) != 0:
+        ai_max_chess = max(ai_final_score)
+    else:
+        ai_max_chess = 0
     return sum(user_final_score), user_max_chess, sum(ai_final_score), ai_max_chess
 
 def whoiswinner(user_final_score, user_max_chess, ai_final_score, ai_max_chess):
@@ -218,7 +261,7 @@ if __name__ == "__main__":
         print(Back.RED+'User chess pieces: ',end="")
         print(Style.RESET_ALL,end="")
         print(user)
-        print(Back.BLUE+'AI chess pieces: ',end="")
+        print(Back.GREEN+'AI chess pieces: ',end="")
         print(Style.RESET_ALL,end="")
         print(ai)
         # 4x4 Game Start
@@ -251,7 +294,7 @@ if __name__ == "__main__":
         print(Back.RED+'User chess pieces: ',end="")
         print(Style.RESET_ALL,end="")
         print(user)
-        print(Back.BLUE+'AI chess pieces: ',end="")
+        print(Back.GREEN+'AI chess pieces: ',end="")
         print(Style.RESET_ALL,end="")
         print(ai)
         # 6x6 Game Start

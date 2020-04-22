@@ -35,12 +35,11 @@ print(Style.RESET_ALL,end="")
 #print(Style.RESET_ALL) 
 #print('back to normal now') 
 
-a = [1,2,3,4,20,4]
+a = [2,3,5,8,13]
+aa = [2,2,3,3,5,5,8,8,8,13,13]
+print("/////",aa.index(max(aa)))
 
-print(max(a))
-print(sum(a))
 
-a.remove(1)
 
 
 b = 1
@@ -90,6 +89,48 @@ kk.remove(3)
 print(gg)
 # print(position(board, ai, board_size, user_on_board, ai_on_board))
 #print(score)
+
+'''
+def position(board, ai, board_size, user_on_board, ai_on_board):
+    row, col = check_corner(board, board_size)
+    if row == -2 and col == -2:  #corner都被下完了
+        pos_score = []  #[[hand, row, col, user_score, ai_score],[]]
+        for hand in range(len(ai)):
+            tmp_board = board.copy()
+            if ai[hand] < 13:
+                for i in range(board_size):
+                    for j in range(board_size):
+                        if board[i][j] != -1 and board[i][j] == 0:
+                            ai_on_board.append([i,j])
+                            tmp_board[i][j] = ai[hand]
+                            tmp_board = change_board_cond(tmp_board, i, j, ai[hand], board_size)
+                            print(tmp_board)
+                            user_score, ai_score = score_on_board(tmp_board, board_size, user_on_board, ai_on_board)
+                            print("user_score: ",user_score)
+                            print("ai_score: ", ai_score)
+                            pos_score.append([ai[hand], i, j, user_score, ai_score])
+                            ai_on_board.remove([i,j])
+                            tmp_board[i][j] = 0
+                row, col, weight = find_best_choice(pos_score)
+                return row, col, weight
+            else:
+                for i in range(board_size):
+                    for j in range(board_size):
+                        if board[i][j] != -1 and board[i][j] == 0:
+                            ai_on_board.append([i,j])
+                            tmp_board[i][j] = ai[hand]
+                            tmp_board = change_board_cond(tmp_board, i, j, ai[hand], board_size)
+                            user_score, ai_score = score_on_board(tmp_board, board_size, user_on_board, ai_on_board)
+                            pos_score.append([ai[hand], i, j, user_score, ai_score])
+                            ai_on_board.remove([i,j])
+                            tmp_board[i][j] = 0
+                row, col, weight = find_best_choice(pos_score)
+                return row, col, weight
+    else:  # 要先出小於13但最大的
+        max_chess_index = ai.index(max(ai))
+        weight = ai[max_chess_index-1]
+        return row, col, weight
+'''
 
 
 
